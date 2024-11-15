@@ -1,19 +1,23 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
-public class CreatedParticle : MonoBehaviour
+public class CreatedParticle : MonoBehaviour, IPointerClickHandler
 {
     public static List<CreatedParticle> particles = new List<CreatedParticle>();
     public float weight;
     public Vector3 velocity = Vector3.zero;
     private void Awake()
     {
-        weight = Random.Range(-1000,1000) / 1000f;
+        particles.Add(this);
+        if (GetComponent<Particle>())
+            return;
+        weight = Random.Range(-1000, 1000) / 1000f;
         Renderer renderer = GetComponent<Renderer>();
         renderer.material.SetFloat("_Metallic", 0.8f);
-        renderer.material.color = Color.red * ((weight + 1)/2f);
-        particles.Add(this);
+        renderer.material.color = Color.red * ((weight + 1) / 2f);
     }
     private void OnMouseDrag()
     {
@@ -25,14 +29,22 @@ public class CreatedParticle : MonoBehaviour
         gameObject.AddComponent<Particle>();
         gameObject.GetComponent<Particle>().weight = weight;
         gameObject.GetComponent<Particle>().velocity = velocity;
-        particles.Remove(this);
         Destroy(this);
     }
     public static void ReleaseAll()
     {
-        while (particles.Count > 0)
+        foreach (var particle in particles)
+            particle.Release();
+        particles.Clear();
+        if(ParticleWindow.instance)
+            Destroy(ParticleWindow.instance);
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (eventData.button == PointerEventData.InputButton.Right)
         {
-            particles[0].Release();
+            ParticleWindow.Create(this);
         }
     }
 }

@@ -9,8 +9,9 @@ using System.Xml;
 public class Prefabs
 {
     public static GameObject text => GameObject.Instantiate(Resources.Load<GameObject>("Prefabs/Text"));
+    public static GameObject window => GameObject.Instantiate(Resources.Load<GameObject>("Prefabs/ParticleWindow"));
 }
-public class ParticleUI : MonoBehaviour
+/*public class ParticleUI : MonoBehaviour
 {
     // Start is called before the first frame update
     public static void Create(GameObject gameObject)
@@ -96,9 +97,9 @@ public class CloseButton : MonoBehaviour
         }
         Destroy(gameObject);
     }
-}
+}*/
 
-public class DragField : MonoBehaviour
+/*public class DragField : MonoBehaviour
 {
     public List<GameObject> objects = new List<GameObject>();
     private List<Vector3> offsets = new List<Vector3>();
@@ -127,7 +128,7 @@ public class DragField : MonoBehaviour
             objects[i].transform.position = CursorPos + offsets[i];
         }
     }
-}
+}*/
 
 public class TextField : MonoBehaviour
 {

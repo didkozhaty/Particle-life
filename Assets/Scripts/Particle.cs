@@ -38,7 +38,7 @@ public class Particle : MonoBehaviour
 
             }
             velocity += givenVelocity * Config.scaleVelocity;
-            transform.position += velocity / 10 * Time.deltaTime;
+            transform.position += velocity * Time.deltaTime * Config.scaleVelocity;
             Vector3 fieldPosition = transform.position + new Vector3(fieldOff, fieldOff, 0);
             if(isOutOfField())
             {

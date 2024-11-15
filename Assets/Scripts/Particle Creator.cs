@@ -11,7 +11,6 @@ public class ParticleCreator : MonoBehaviour
         particle.transform.position = new Vector3(random,random,0);
         particle.transform.localScale = Config.particleScale;
         particle.AddComponent<CreatedParticle>();
-        ParticleUI.Create(particle);
     }
     public void OnMouseDrag()
     {
