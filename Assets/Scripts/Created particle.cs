@@ -21,7 +21,7 @@ public class CreatedParticle : MonoBehaviour, IPointerClickHandler
     }
     private void OnMouseDrag()
     {
-        var worldPoint = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, 10));
+        var worldPoint = Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Config.fieldSize));
         gameObject.transform.position = worldPoint;
     }
     public void Release()

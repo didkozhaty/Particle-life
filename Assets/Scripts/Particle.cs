@@ -43,10 +43,7 @@ public class Particle : MonoBehaviour
             if(isOutOfField())
             {
                 if (transform.position.x > fieldOff) transform.position -= new Vector3(Config.fieldSize, 0, 0) * (float)Math.Floor(Math.Abs(Convert.ToDouble(fieldPosition.x / Config.fieldSize)));
-                if (transform.position.y > fieldOff)
-                {
-                    transform.position -= new Vector3(0, Config.fieldSize, 0) * (float)Math.Floor(Math.Abs(Convert.ToDouble(fieldPosition.y / Config.fieldSize)));
-                }
+                if (transform.position.y > fieldOff) transform.position -= new Vector3(0, Config.fieldSize, 0) * (float)Math.Floor(Math.Abs(Convert.ToDouble(fieldPosition.y / Config.fieldSize)));
                 if (transform.position.x < -fieldOff) transform.position += new Vector3(Config.fieldSize, 0, 0) * (float)Math.Ceiling(Math.Abs(Convert.ToDouble(fieldPosition.x / Config.fieldSize)));
                 if (transform.position.y < -fieldOff) transform.position += new Vector3(0, Config.fieldSize, 0) * (float)Math.Ceiling(Math.Abs(Convert.ToDouble(fieldPosition.y / Config.fieldSize)));
             }
