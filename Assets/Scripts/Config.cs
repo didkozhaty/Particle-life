@@ -19,15 +19,17 @@ public class Config : MonoBehaviour
     {
         get { return new Vector3(-fieldSize/2, -fieldSize/2, 0); }
     }
-    public GameObject _field;
     public bool _isLaunched;
     public float _particleSize;
     public float _fieldSize;
     public float _scaleVelocity;
+    private void Start()
+    {
+        field = GameObject.Find("Field");
+    }
     public void OnValidate()
     {
         scaleVelocity = _scaleVelocity;
-        field = _field;
         if (isLaunched != _isLaunched)
         {
             ToggleLaunched();
