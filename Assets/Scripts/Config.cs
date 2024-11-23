@@ -10,6 +10,7 @@ public class Config : MonoBehaviour
     public static float particleSize;
     public static float fieldSize;
     public static float scaleVelocity;
+    public static GameObject field;
     public static Vector3 particleScale
     {
         get { return new Vector3(particleSize, particleSize, particleSize); }
@@ -18,13 +19,15 @@ public class Config : MonoBehaviour
     {
         get { return new Vector3(-fieldSize/2, -fieldSize/2, 0); }
     }
-    public GameObject field;
+    public GameObject _field;
     public bool _isLaunched;
     public float _particleSize;
     public float _fieldSize;
     public float _scaleVelocity;
     public void OnValidate()
     {
+        scaleVelocity = _scaleVelocity;
+        field = _field;
         if (isLaunched != _isLaunched)
         {
             ToggleLaunched();
@@ -37,9 +40,8 @@ public class Config : MonoBehaviour
         {
             ChangeFieldSize(_fieldSize);
         }
-        scaleVelocity = _scaleVelocity;
     }
-    public void ToggleLaunched()
+    public static void ToggleLaunched()
     {
         isLaunched = !isLaunched;
         if (isLaunched)
@@ -47,7 +49,7 @@ public class Config : MonoBehaviour
         else
             Particle.UnReleaseAll();
     }
-    public void ChangeParticleSize(float size)
+    public static void ChangeParticleSize(float size)
     {
         particleSize = size;
         foreach (GameObject particle in Particle.particles)
@@ -59,11 +61,11 @@ public class Config : MonoBehaviour
             particle.gameObject.transform.localScale = new Vector3(particleSize, particleSize, particleSize);
         }
     }
-    public void ChangeFieldSize(float size)
+    public static void ChangeFieldSize(float size)
     {
         fieldSize = size;
         Camera.main.orthographicSize = size/2;
-        float fieldX = (Camera.main.transform.position - Camera.main.ViewportToWorldPoint(new Vector3(1, 0, size))).x+size/2;
+        float fieldX = (Camera.main.ViewportToWorldPoint(new Vector3(0, 0, size)) - Camera.main.transform.position).x+size/2;
         Camera.main.transform.position = new Vector3(fieldX, 0, -size);
         field.transform.localScale = new Vector3(fieldSize, fieldSize, 0.1f);
     }

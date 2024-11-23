@@ -19,7 +19,6 @@ public class DragField : MonoBehaviour, IDragHandler, IPointerDownHandler
 
     public void OnDrag(PointerEventData eventData)
     {
-        Debug.Log("Drag");
         window.transform.position = eventData.position + offset;
     }
 
