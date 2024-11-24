@@ -70,7 +70,7 @@ public class ModelParticle
     public static ModelParticle random(int dims)
     {
         ModelParticle result = new ModelParticle(dims);
-        for (int i = 0; i < dims; i++)
+        for (int i = 0; i < result.pos.dims; i++)
         {
             result.pos[i] = Random.Range(-10f, 10f);
         }

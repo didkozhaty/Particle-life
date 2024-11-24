@@ -1,7 +1,10 @@
+using JetBrains.Annotations;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO.IsolatedStorage;
 using System.Linq;
+using Unity.Properties;
 using UnityEngine;
 using UnityEngine.Windows;
 
@@ -27,6 +30,7 @@ public class Model
     int outputs;
     public Model(int inputs, int outputs, int biases, ModelType type)
     {
+        all = new();
         if (type == ModelType.distance)
         {
             answer = new List<ModelParticle>(outputs);
@@ -40,7 +44,7 @@ public class Model
             }
         } else if ( type == ModelType.velocity || type == ModelType.coordsOut || type == ModelType.coordChange)
         {
-            answer = new List<ModelParticle>(outputs);
+            answer = new(outputs);
             bias = new List<ModelParticle>(biases);
             input = new ModelParticle(inputs);
             all.AddRange(answer);
@@ -99,12 +103,35 @@ public class Model
         }
         return predictions.ToArray();
     }
+    public int GetAnswer(float[] inputs)
+    {
+        float answers = float.NegativeInfinity;
+        int index = 0;
+        for (int i = 0; i < inputs.Length; i++)
+        {
+            if(inputs[i] > answers)
+            {
+                answers = inputs[i];
+                index = i;
+            }
+        }
+        return index;
+    }
+    public int[] GetAnswer(float[][] inputs)
+    {
+        List<int> answers = new();
+        foreach(var i in inputs)
+        {
+            answers.Add(GetAnswer(i));
+        }
+        return answers.ToArray();
+    }
     public void train(float[] inputs, float[] rightAnswers)
     {
         List<Vector> velocities = new List<Vector>(all.Count);
         List<Vector> coordChange = new List<Vector>(all.Count);
         Vector avgPos = new Vector(input.pos.dims);
-        for (int i = 0; i <= inputs.Length; i++)
+        for (int i = 0; i < this.inputs; i++)
         {
             input.pos[i] = inputs[i];
         }
@@ -141,6 +168,86 @@ public class Model
             train(i.x,i.y);
         }
     }
+    public string ModelGrade(float[][] x, float[][] y)
+    {
+        List<int> rAnswers = new List<int>();
+        foreach (var i in y)
+        {
+            rAnswers.Add(maxIndex(i));
+        }
+        List<int> gAnswers = new List<int>();
+        gAnswers.AddRange(GetAnswer(x));
+        float accuracy;
+        List<int[]> answers = new List<int[]>();
+        for (int i = 0;i < y[0].Length;i++)
+        {
+            answers.Add(new int[y[0].Length]);
+        }
+        int right = 0;
+        for (int i = 0; i < rAnswers.Count; i++)
+        {
+            answers[gAnswers[i]][rAnswers[i]]++;
+        }
+        List<int[]> precision = new List<int[]>();
+        for (int i = 0; i < y[0].Length; i++)
+        {
+            precision.Add(new int[2]);
+        }
+        for (int i = 0; i < answers.Count; i++)
+        {
+            for (int j = 0; j < answers[i].Length; j++)
+            {
+                if(i == j)
+                    precision[i][0] = answers[i][j];
+                else
+                {
+                    precision[i][1] += answers[i][j];
+                }
+            }
+        }
+        precision.ForEach(i => right += i[0]);
+        accuracy = right / rAnswers.Count;
+        string retme = $"accuracy: {accuracy}\n";
+        for (int i = 0; i < precision.Count; i++)
+        {
+            try
+            {
+                retme += $"precision: {precision[i][0] / (precision[i].Sum())},";
+            }
+            catch (DivideByZeroException)
+            {
+                retme += $"precision: 0\n";
+            }
+            try
+            {
+                retme += $"recall: {rAnswers.Where(a => a == i).Count() / precision[i][0]}\n";
+            }
+            catch (DivideByZeroException)
+            {
+                retme += $"recall: 1\n";
+            }
+             
+        }
+        return retme;
+    }
+
+    private int maxIndex(float[] arr)
+    {
+        float max = arr[0];
+        int index = 0;
+        int current = 0;
+        foreach (var item in arr)
+        {
+            if(item > max)
+            {
+                max = item;
+                index = current;
+            }
+            current++;
+        }
+        return index;
+    }
+
     private void correctingAnswers(float[] givenAnswers, float rightAnswer, int answerIndex, float[] inputs, Vector velocity, Vector s, Vector avgPos, int particleIndex)
     {
         ModelParticle correcting = all[particleIndex];
