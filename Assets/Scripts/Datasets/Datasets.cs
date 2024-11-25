@@ -14,76 +14,99 @@ public class Datasets
         string[] dataKeys = { "Pclass", "Age", "SibSp", "Parch", "Fare"};
         string[] specificDataKeys = { "Sex" };
         string[] answerKeys = { "Survived" };
-        result.Add("x", extractData(set, dataKeys, specificDataKeys, (key, data) => { return data == "male" ? 1 : 0; })["x"]);
-        result.Add("y", extractAnswers(set, answerKeys)["y"]);
+        result.Add("x", extractData(set, dataKeys, specificDataKeys, (key, data) => { return data == "male" ? 1 : 0; }));
+        result.Add("y", extractAnswers(set, answerKeys));
         return result;
     }
-    private static Dictionary<string, float[][]> extractData(Dictionary<string, string[]> set, string[] dataKeys, string[] specificDataKeys, Func<string, string, float> specificDataExtract)
+    private static float[][] extractData(Dictionary<string, string[]> set, string[] dataKeys, string[] specificDataKeys, Func<string, string, float> specificDataExtract)
     {
-        Dictionary<string, float[][]> result = new();
-        result.Add("x", new float[dataKeys.Length + specificDataKeys.Length][]);
-        for (int i = 0; i < result["x"].Length; i++)
+        List<float[]> result = new();
+        for (int i = 0; i < set[dataKeys[0]].Length; i++)
         {
-            result["x"][i] = new float[set[dataKeys[0]].Length];
+            result.Add(new float[dataKeys.Length + specificDataKeys.Length]);
         }
+        Action<int> readColumn = (keyIndex) =>
+        {
+            int index = 0;
+            foreach (var i in set[dataKeys[keyIndex]])
+            {
+                try
+                {
+                    result[index][keyIndex] = float.Parse(i);
+                }
+                catch (Exception)
+                {
+                    result[index][keyIndex] = 0;
+                }
+                index++;
+            }
+        };
+        Action<int> readSpecificColumn = (keyIndex) =>
+        {
+            int index = 0;
+            foreach (var i in set[specificDataKeys[keyIndex]])
+            {
+                try
+                {
+                    result[index++][keyIndex + dataKeys.Length] = specificDataExtract(specificDataKeys[keyIndex], i);
+                }
+                catch (Exception)
+                {
+                    result[index][keyIndex + dataKeys.Length] = 0;
+                }
+            }
+        };
         for (int i = 0; i < dataKeys.Length; i++)
         {
-            for (int j = 0; j < set[dataKeys[i]].Length; j++)
-            {
-                try
-                {
-                    result["x"][i][j] = float.Parse(set[dataKeys[i]][j]);
-                }
-                catch (Exception)
-                {
-                    result["x"][i][j] = 0;
-                    Debug.Log($"Err: |{set[dataKeys[i]][j]}|");
-                }
-            }
+            readColumn(i);
         }
-        for (int i = dataKeys.Length; i < dataKeys.Length + specificDataKeys.Length; i++)
+        for (int i = 0; i < specificDataKeys.Length; i++)
         {
-            for (int j = 0; j < set[specificDataKeys[i-dataKeys.Length]].Length; j++)
-            {
-                result["x"][i][j] = specificDataExtract(set[specificDataKeys[i - dataKeys.Length]][j], specificDataKeys[i - dataKeys.Length]);
-            }
+            readSpecificColumn(i);
         }
-        return result;
+        return result.ToArray();
     }
-    private static Dictionary<string, float[][]> extractAnswers(Dictionary<string, string[]> set, string[] answerKeys)
+    private static float[][] extractAnswers(Dictionary<string, string[]> set, string[] answerKeys)
     {
-        Dictionary<string, float[][]> result = new();
-        result.Add("y", new float[answerKeys.Length * 2][]);
-        for (int i = 0; i < result["y"].Length; i++)
+        List<float[]> result = new();
+        for (int i = 0; i < set[answerKeys[0]].Length; i++)
         {
-            result["y"][i] = new float[set[answerKeys[0]].Length];
+            result.Add(new float[answerKeys.Length * 2]);
         }
-        for (int i = 0; i < answerKeys.Length; i++)
+        Action<int> readColumn = (keyIndex) =>
         {
-            for (int j = 0; j < set[answerKeys[i]].Length; j++)
+            int index = 0;
+            foreach (var i in set[answerKeys[keyIndex]])
             {
                 try
                 {
-                    float answer = float.Parse(set[answerKeys[i]][j]);
-                    result["y"][i][j] = answer;
+                    float answer = float.Parse(i);
+                    result[index][keyIndex] = answer;
                 }
                 catch (Exception)
                 {
-                    Debug.Log($"Error: |{set[answerKeys[i]][j]}|");
-                    set[answerKeys[i]][j] = "0";
-                    result["y"][i][j] = 0;
+                    set[answerKeys[keyIndex]][index] = "0";
+                    result[index][keyIndex] = 0;
                 }
+                index++;
             }
-        }
+        };
+        Action<int> readColumn2 = (keyIndex) =>
+        {
+            int index = 0;
+            foreach (var i in set[answerKeys[keyIndex]])
+            {
+                float answer = float.Parse(i);
+                result[index][keyIndex + answerKeys.Length] = Mathf.Abs(answer - 1);
+                index++;
+            }
+        };
         for (int i = 0; i < answerKeys.Length; i++)
         {
-            for (int j = 0; j < set[answerKeys[i]].Length; j++)
-            {
-                float answer = float.Parse(set[answerKeys[i]][j]);
-                result["y"][i + answerKeys.Length][j] = Mathf.Abs(answer - 1);
-            }
+            readColumn(i);
+            readColumn2(i);
         }
-        return result;
+        return result.ToArray();
     }
 
 }

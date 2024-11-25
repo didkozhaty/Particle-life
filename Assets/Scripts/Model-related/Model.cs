@@ -31,40 +31,41 @@ public class Model
     public Model(int inputs, int outputs, int biases, ModelType type)
     {
         all = new();
+        allPos = new();
         if (type == ModelType.distance)
         {
-            answer = new List<ModelParticle>(outputs);
+            answer = new(outputs);
+            for (int i = 0; i < outputs; i++)
+                answer.Add(ModelParticle.random(Mathf.Max(inputs, outputs)));
             bias = new List<ModelParticle>(biases);
+            for (int i = 0; i < biases; i++)
+                bias.Add(ModelParticle.random(Mathf.Max(inputs, outputs)));
             input = new ModelParticle(inputs);
             all.AddRange(answer);
             all.AddRange(bias);
-            for (int i = 0; i < all.Count; i++)
-            {
-                all[i] = ModelParticle.random(inputs);
-            }
         } else if ( type == ModelType.velocity || type == ModelType.coordsOut || type == ModelType.coordChange)
         {
             answer = new(outputs);
+            for (int i = 0; i < outputs; i++)
+                answer.Add(ModelParticle.random(Mathf.Max(inputs, outputs)));
             bias = new List<ModelParticle>(biases);
+            for (int i = 0; i < biases; i++)
+                bias.Add(ModelParticle.random(Mathf.Max(inputs, outputs)));
             input = new ModelParticle(inputs);
             all.AddRange(answer);
             all.AddRange(bias);
-            for (int i = 0; i < all.Count; i++)
-            {
-                all[i] = ModelParticle.random(Mathf.Max(inputs,outputs));
-            }
         }
         else
         {
-            answer = new List<ModelParticle>(outputs);
+            answer = new(outputs);
+            for (int i = 0; i < outputs; i++)
+                answer.Add(ModelParticle.random(inputs + outputs));
             bias = new List<ModelParticle>(biases);
+            for (int i = 0; i < biases; i++)
+                bias.Add(ModelParticle.random(inputs + outputs));
             input = new ModelParticle(inputs);
             all.AddRange(answer);
             all.AddRange(bias);
-            for (int i = 0; i < all.Count; i++)
-            {
-                all[i] = ModelParticle.random(inputs + outputs);
-            }
         }
         foreach (var particle in all)
         {
@@ -77,14 +78,21 @@ public class Model
     }
     public float[] predict(float[] inputs)
     {
-        for (int i = 0; i <= inputs.Length; i++)
+        for (int i = 0; i < inputs.Length; i++)
         {
-            input.pos[i] = inputs[i];
+            try
+            {
+                input.pos[i] = inputs[i];
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
         }
         for (int i = 0; i < 100; i++)
         {
-            all.ForEach(x => { x.fHalfStep(); });
-            all.ForEach(x => { x.sHalfStep(); });
+            input.Step();
         }
         float[] answers = getAnswer(inputs);
         for (int i = 0; i < all.Count; i++)
@@ -105,13 +113,14 @@ public class Model
     }
     public int GetAnswer(float[] inputs)
     {
-        float answers = float.NegativeInfinity;
+        float answer = float.NegativeInfinity;
         int index = 0;
-        for (int i = 0; i < inputs.Length; i++)
+        float[] answers = predict(inputs);
+        for (int i = 0; i < answers.Length; i++)
         {
-            if(inputs[i] > answers)
+            if(answers[i] > answer)
             {
-                answers = inputs[i];
+                answer = answers[i];
                 index = i;
             }
         }
@@ -135,13 +144,24 @@ public class Model
         {
             input.pos[i] = inputs[i];
         }
-        for (int i = 0; i < 100; i++)
+        List<Vector> iter = input.Step(true);
+        coordChange = iter;
+        velocities = iter;
+        for (int i = 1; i < 100; i++)
         {
             avgPos += input.pos;
-            List<Vector> iter = input.Step(true);
+            iter = input.Step(true);
             for (int j = 0; j < iter.Count; j++)
             {
-                coordChange[j] += velocities[j];
+                try
+                {
+                    coordChange[j] += velocities[j];
+                }
+                catch (Exception)
+                {
+                    Debug.Log($"{j},{coordChange.Count},{velocities.Count},{iter.Count}");
+                    throw;
+                }
                 velocities[j] += iter[j];
             }
         }
@@ -183,15 +203,22 @@ public class Model
         {
             answers.Add(new int[y[0].Length]);
         }
-        int right = 0;
+        float right = 0;
         for (int i = 0; i < rAnswers.Count; i++)
         {
-            answers[gAnswers[i]][rAnswers[i]]++;
+            try
+            {
+                answers[gAnswers[i]][rAnswers[i]]++;
+            }
+            catch (Exception)
+            {
+                Debug.Log($"{i},{gAnswers[i]},{rAnswers[i]}\n{answers.Count},{answers[0].Length},{rAnswers.Count},{gAnswers.Count}");
+            }
         }
-        List<int[]> precision = new List<int[]>();
+        List<float[]> precision = new List<float[]>();
         for (int i = 0; i < y[0].Length; i++)
         {
-            precision.Add(new int[2]);
+            precision.Add(new float[2]);
         }
         for (int i = 0; i < answers.Count; i++)
         {
@@ -220,7 +247,7 @@ public class Model
             }
             try
             {
-                retme += $"recall: {rAnswers.Where(a => a == i).Count() / precision[i][0]}\n";
+                retme += $"recall: {precision[i][0] / rAnswers.Where(a => a == i).Count()}\n";
             }
             catch (DivideByZeroException)
             {
@@ -245,6 +272,8 @@ public class Model
             }
             current++;
         }
+        if (index >= 2)
+            index = index;
         return index;
     }
 
@@ -255,7 +284,7 @@ public class Model
         if (modelType == ModelType.velocity)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            correcting.weight += mistake * velocity[answerIndex] * 0.1f;
+            correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.distance)
         {
@@ -270,22 +299,22 @@ public class Model
             for (int i = 0; i < mistake.dims; i++)
                 howMuch += mistake[i];
             howMuch = howMuch > 0 ? 1 : -1;
-            correcting.weight += mistake.lenght * howMuch * 0.1f;
+            correcting.weight += mistake.lenght * howMuch;
         }
         else if (modelType == ModelType.coordsOut)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            correcting.weight += mistake * velocity[answerIndex] * 0.1f;
+            correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.coordChange)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            correcting.weight += mistake * velocity[answerIndex] * 0.1f;
+            correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.outputCoords)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            correcting.weight += mistake * velocity[answerIndex + this.inputs] * 0.1f;
+            correcting.weight += mistake * velocity[answerIndex + this.inputs];
         }
 
 
@@ -308,25 +337,25 @@ public class Model
             for (int i = 0; i < mistake.dims; i++)
                 howMuch += mistake[i];
             howMuch = howMuch > 0 ? 1 : -1;
-            allPos[particleIndex] += mistake * howMuch * 0.1f;
+            allPos[particleIndex] += mistake * howMuch;
         }
         else if (modelType == ModelType.coordsOut)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
             mistake *= 2;
-            allPos[particleIndex] += s * mistake * 0.1f;
+            allPos[particleIndex] += s * mistake;
         }
         else if (modelType == ModelType.coordChange)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
             mistake *= 2;
-            allPos[particleIndex] += s * mistake * 0.1f;
+            allPos[particleIndex] += s * mistake;
         }
         else if (modelType == ModelType.outputCoords)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
             mistake *= 2;
-            allPos[particleIndex] += s * mistake * 0.1f;
+            allPos[particleIndex] += s * mistake;
         }
     }
     private float[] getAnswer(float[] inputData)

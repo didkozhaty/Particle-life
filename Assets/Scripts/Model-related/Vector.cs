@@ -14,7 +14,11 @@ public struct Vector
     }
     public Vector(int coords)
     {
-        this.coords = new List<float>(coords);
+        this.coords = new List<float>();
+        for (int i = 0; i < coords; i++)
+        {
+            this.coords.Add(0);
+        }
     }
     public float this[int index]
     {
