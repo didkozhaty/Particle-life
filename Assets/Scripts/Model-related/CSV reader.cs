@@ -11,13 +11,14 @@ class CSV
     public static string[][] Read(string path)
     {
         List<string[]> data = new List<string[]>();
-        bool isFirst = true;
         using (var reader = new StreamReader(path))
         {
+            int index = 0;
             while (!reader.EndOfStream)
             {
+                index++;
                 var line = reader.ReadLine();
-                MatchCollection strings = Regex.Matches(line, @"(?:(?:""([^""]*)"")|([^"",]*))(?:,|$)");
+                MatchCollection strings = Regex.Matches(line, @"(?:^|,)(?:""([^""]*)""|([^"",]*))");
                 var result = strings.Cast<Match>().Select(m => m.Groups[1].Success ? m.Groups[1].Value : m.Groups[2].Value).ToList();
                 for (int i = 0; i < result.Count; i++)
                 {
@@ -26,12 +27,8 @@ class CSV
                         result[i] = Regex.Replace(result[i], @"\.", ",");
                     }
                 }
+                    
                 data.Add(result.ToArray());
-                if (isFirst)
-                {
-                    Debug.Log(line);
-                    isFirst = false;
-                }
             }
         }
         return data.ToArray();
@@ -42,14 +39,23 @@ class CSV
         Func<int, string[]> readColumn = (i) =>
         {
             string[] result = new string[data.Length - 1];
-            for (int j = 0; j < data[j + 1].Length; j++)
+            for (int j = 0; j < data.Length - 1; j++)
             {
                 try
                 {
-                    result[j] = data[j + 1][i];
+                    result[j] = data[j+1][i];
                 }
                 catch (Exception)
                 {
+                    try
+                    {
+                        data[j + 1][i] = data[j + 1][i];
+                        Debug.Log("Problem is in result");
+                    }
+                    catch (Exception)
+                    {
+                        Debug.Log("Problem is in data");
+                    }
                     Debug.Log($"i: {i}, j:{j}, data: {data[0].Length}, {data.Length}");
                     throw;
                 }

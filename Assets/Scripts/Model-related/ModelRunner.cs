@@ -7,6 +7,8 @@ using UnityEngine;
 
 public class ModelRunner : MonoBehaviour
 {
+    Dictionary<string, float[][]> dataset;
+    Model model;
     // Start is called before the first frame update
     void Start()
     {
@@ -18,21 +20,19 @@ public class ModelRunner : MonoBehaviour
             startTime = Time.timeAsDouble;
             return retme;
         };
-        Dictionary<string, float[][]> dataset = Datasets.titatic;
+        dataset = Datasets.titaticTrain;
         //Debug.Log(elapseTime());
-        Model model = new(dataset["x"][0].Length, dataset["y"][0].Length, 0, ModelType.outputCoords);
+        model = new(dataset["x"][0].Length, dataset["y"][0].Length, 0, ModelType.coordChange);
         Debug.Log($"{dataset["x"][0].Length}, {dataset["y"][0].Length}");
         //Debug.Log(elapseTime());
         Debug.Log(model.ModelGrade(dataset["x"], dataset["y"]));
-        elapseTime();
-        //Debug.Log($"Graduation time: {elapseTime()}");
-        for (int i = 0; i < 50; i++)
-        {
-            model.train(dataset["x"], dataset["y"]);
-        }
-        Debug.Log($"Train time: {elapseTime()}");
+        model.Visualize();
+    }
+    public void train()
+    {
+        model.train(dataset["x"], dataset["y"]);
         Debug.Log(model.ModelGrade(dataset["x"], dataset["y"]));
-        //Debug.Log($"Graduation time: {elapseTime()}");
+        model.Visualize();
     }
 
     // Update is called once per frame

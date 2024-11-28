@@ -82,7 +82,7 @@ public class Model
         {
             try
             {
-                input.pos[i] = inputs[i];
+                input.pos.coords[i] = inputs[i];
             }
             catch (Exception)
             {
@@ -142,7 +142,7 @@ public class Model
         Vector avgPos = new Vector(input.pos.dims);
         for (int i = 0; i < this.inputs; i++)
         {
-            input.pos[i] = inputs[i];
+            input.pos.coords[i] = inputs[i];
         }
         List<Vector> iter = input.Step(true);
         coordChange = iter;
@@ -272,18 +272,20 @@ public class Model
             }
             current++;
         }
-        if (index >= 2)
-            index = index;
         return index;
     }
 
     private void correctingAnswers(float[] givenAnswers, float rightAnswer, int answerIndex, float[] inputs, Vector velocity, Vector s, Vector avgPos, int particleIndex)
     {
+        if (float.IsNaN(givenAnswers[answerIndex]))
+            throw new System.Exception("NaN in answer");
         ModelParticle correcting = all[particleIndex];
         float velocityToAnswer;
+        if (s.containsNaN)
+            throw new System.Exception("NaN in s");
         if (modelType == ModelType.velocity)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.distance)
@@ -303,25 +305,24 @@ public class Model
         }
         else if (modelType == ModelType.coordsOut)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.coordChange)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             correcting.weight += mistake * velocity[answerIndex];
         }
         else if (modelType == ModelType.outputCoords)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             correcting.weight += mistake * velocity[answerIndex + this.inputs];
         }
 
 
         if (modelType == ModelType.velocity)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            mistake *= 2;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             allPos[particleIndex] += velocity.norm / mistake;
         }
         else if (modelType == ModelType.distance)
@@ -341,20 +342,17 @@ public class Model
         }
         else if (modelType == ModelType.coordsOut)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            mistake *= 2;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             allPos[particleIndex] += s * mistake;
         }
         else if (modelType == ModelType.coordChange)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            mistake *= 2;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             allPos[particleIndex] += s * mistake;
         }
         else if (modelType == ModelType.outputCoords)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer - 0.5f;
-            mistake *= 2;
+            float mistake = givenAnswers[answerIndex] - rightAnswer;
             allPos[particleIndex] += s * mistake;
         }
     }
@@ -375,7 +373,13 @@ public class Model
         } else if (modelType == ModelType.coordChange)
         {
             for (int i = 0; i < outputs; i++)
+            {
+                if (inputData.Where(a => float.IsNaN(a)).Count() > 0)
+                    throw new Exception("NaN in input");
+                if(input.pos.containsNaN)
+                    throw new Exception("NaN in pos");
                 answer.Add(inputData[i] - input.pos[i]);
+            }    
         } else if (modelType == ModelType.outputCoords)
         {
             for (int i = 0; i < outputs; i++)
@@ -387,5 +391,16 @@ public class Model
             answer[i] /= max;
         }
         return answer.ToArray();
+    }
+    public void Visualize()
+    {
+        foreach (var item in all)
+        {
+            item.Visualize();
+        }
+        foreach (var item in answer)
+        {
+            item.visualizer.gameObject.GetComponent<Renderer>().material.color = new Color(0, 255, 0);
+        }
     }
 }

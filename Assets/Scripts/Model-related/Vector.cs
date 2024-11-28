@@ -36,6 +36,10 @@ public struct Vector
     private Vector copier()
     {
         Vector result = new Vector(dims);
+        if(containsNaN)
+        {
+            throw new System.Exception("NaN in copy");
+        }
         for (int i = 0; i < dims; i++)
         {
             result[i] = this[i];
@@ -99,9 +103,13 @@ public struct Vector
     public static Vector operator /(Vector a, float b)
     {
         Vector result = a.copy;
+        if (result.containsNaN)
+            throw new System.Exception("NaN in copy");
         for (int i = 0; i < result.dims; i++)
         {
             result[i] /= b;
+            if (float.IsNaN(result[i]))
+                throw new System.Exception($"NaN in division. i: {i}; b: {b}");
         }
         return result;
     }
@@ -118,11 +126,12 @@ public struct Vector
     private Vector __normalized()
     {
         Vector result = copy;
+        if (result.containsNaN)
+            throw new System.Exception("NaN in copy");
         float len = lenght;
-        for (int i = 0;i < dims;i++)
-        {
-            result /= len;
-        }
+        result /= len;
+        if (result.containsNaN)
+            throw new System.Exception("NaN in result");
         return result;
     }
     public Vector norm => __normalized();
@@ -148,5 +157,17 @@ public struct Vector
     {
         for (int i = 0; i < dims; i++)
             coords[i] = 0;
+    }
+    public bool containsNaN => __ContainsNaN();
+    public bool __ContainsNaN()
+    {
+        foreach (var item in coords)
+        {
+            if(float.IsNaN(item))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

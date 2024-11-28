@@ -2,20 +2,42 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Linq;
 using UnityEngine;
 
 public class Datasets
 {
-    public static Dictionary<string, float[][]> titatic => __titanic();
-    private static Dictionary<string, float[][]> __titanic()
+    public static Dictionary<string, float[][]> titaticTrain => __titanicTrain();
+    private static Dictionary<string, float[][]> __titanicTrain()
     {
-        Dictionary<string, string[]> set = CSV.toDict(CSV.Read(@"E:\Unity\Particle life\Assets\Scripts\Datasets\titanic.csv"));
+        Dictionary<string, string[]> set = CSV.toDict(CSV.Read(@"Assets/Scripts/Datasets/titainc/train.csv"));
         Dictionary<string, float[][]> result = new();
-        string[] dataKeys = { "Pclass", "Age", "SibSp", "Parch", "Fare"};
+        //string[] dataKeys = { "Pclass", "Age", "SibSp", "Parch", "Fare"};
+        string[] dataKeys = { "Age"};
         string[] specificDataKeys = { "Sex" };
         string[] answerKeys = { "Survived" };
         result.Add("x", extractData(set, dataKeys, specificDataKeys, (key, data) => { return data == "male" ? 1 : 0; }));
         result.Add("y", extractAnswers(set, answerKeys));
+        return deleteNaNs(result);
+    }
+    private static Dictionary<string, float[][]> deleteNaNs(Dictionary<string, float[][]> dict)
+    {
+        Func<float[], bool> containsNaN = (arr) =>
+        {
+            return arr.Where(i => float.IsNaN(i)).Count() > 0;
+        };
+        List<float[]> x = new List<float[]>();
+        List<int> NaNs = new List<int>();
+        List<float[]> y = new List<float[]>();
+        Dictionary<string, float[][]> result = new();
+        for (int i = 0; i < dict["x"].Length; i++)
+            if (!containsNaN(dict["x"][i]) && !containsNaN(dict["y"][i]))
+            {
+                x.Add(dict["x"][i]);
+                y.Add(dict["y"][i]);
+            }
+        result.Add("x", x.ToArray());
+        result.Add("y", y.ToArray());
         return result;
     }
     private static float[][] extractData(Dictionary<string, string[]> set, string[] dataKeys, string[] specificDataKeys, Func<string, string, float> specificDataExtract)
@@ -36,7 +58,8 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    result[index][keyIndex] = 0;
+                    Debug.LogError($"Key: {dataKeys[keyIndex]}; Value: |{i}|");
+                    result[index][keyIndex] = float.NaN;
                 }
                 index++;
             }
@@ -52,7 +75,8 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    result[index][keyIndex + dataKeys.Length] = 0;
+                    Debug.LogError($"Key: {specificDataKeys[keyIndex]}; Value: |{i}|");
+                    result[index][keyIndex + dataKeys.Length] = float.NaN;
                 }
             }
         };
@@ -85,8 +109,8 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    set[answerKeys[keyIndex]][index] = "0";
-                    result[index][keyIndex] = 0;
+                    Debug.LogError($"Key: {answerKeys[keyIndex]}; Value: |{i}|");
+                    result[index][keyIndex] = float.NaN;
                 }
                 index++;
             }
@@ -96,9 +120,17 @@ public class Datasets
             int index = 0;
             foreach (var i in set[answerKeys[keyIndex]])
             {
-                float answer = float.Parse(i);
-                result[index][keyIndex + answerKeys.Length] = Mathf.Abs(answer - 1);
-                index++;
+                try
+                {
+                    float answer = float.Parse(i);
+                    result[index][keyIndex + answerKeys.Length] = Mathf.Abs(answer - 1);
+                    index++;
+                }
+                catch (Exception)
+                {
+                    Debug.LogError($"Key: {answerKeys[keyIndex]}; Value: |{i}|");
+                    result[index][keyIndex + answerKeys.Length] = float.NaN;
+                }
             }
         };
         for (int i = 0; i < answerKeys.Length; i++)
