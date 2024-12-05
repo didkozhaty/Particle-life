@@ -103,7 +103,7 @@ public class ModelParticle
         float distance = dir.lenght;
         if (distance == 0)
             return new Vector(dir.dims);
-        dir = dir.norm / (float)distance;
+        dir = dir.norm / distance;
         return dir;
     }
     public ModelParticle(int dims)
@@ -122,9 +122,9 @@ public class ModelParticle
         ModelParticle result = new ModelParticle(dims);
         for (int i = 0; i < result.pos.dims; i++)
         {
-            result.pos.coords[i] = Random.Range(-1000f, 1000f);
+            result.pos.coords[i] = Random.Range(-100f, 100f);
         }
-        result.weight = Random.value;
+        result.weight = 1;
         return result;
     }
 }

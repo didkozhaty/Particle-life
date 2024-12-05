@@ -58,7 +58,6 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    Debug.LogError($"Key: {dataKeys[keyIndex]}; Value: |{i}|");
                     result[index][keyIndex] = float.NaN;
                 }
                 index++;
@@ -75,7 +74,6 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    Debug.LogError($"Key: {specificDataKeys[keyIndex]}; Value: |{i}|");
                     result[index][keyIndex + dataKeys.Length] = float.NaN;
                 }
             }
@@ -109,7 +107,6 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    Debug.LogError($"Key: {answerKeys[keyIndex]}; Value: |{i}|");
                     result[index][keyIndex] = float.NaN;
                 }
                 index++;
@@ -128,7 +125,6 @@ public class Datasets
                 }
                 catch (Exception)
                 {
-                    Debug.LogError($"Key: {answerKeys[keyIndex]}; Value: |{i}|");
                     result[index][keyIndex + answerKeys.Length] = float.NaN;
                 }
             }

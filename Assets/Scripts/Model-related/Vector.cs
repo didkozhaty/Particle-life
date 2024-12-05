@@ -1,12 +1,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UIElements;
 
 public struct Vector
 {
     public List<float> coords;
     public int dims => coords.Count;
+    public Vector(Vector a)
+    {
+        coords = new List<float>();
+        coords.AddRange(a.coords);
+    }
     public Vector(List<float> coords)
     {
         this.coords = new List<float>();
@@ -31,7 +35,7 @@ public struct Vector
     }
     public static Vector Min(Vector a, Vector b)
     {
-        return a.dims < b.dims ? a : b;
+        return a.dims > b.dims ? b : a;
     }
     private Vector copier()
     {
@@ -51,7 +55,7 @@ public struct Vector
     {
         Vector max = Max(a,b);
         Vector min = Min(a,b);
-        Vector result = max.copy;
+        Vector result = new Vector(max);
         for (int i = 0; i < min.dims; i++)
         {
             result[i] += min[i];
@@ -113,6 +117,11 @@ public struct Vector
         }
         return result;
     }
+    public void Set(Vector a)
+    {
+        coords.Clear();
+        coords.AddRange(a.coords);
+    }
     public float lenght => __len();
     private float __len()
     {
@@ -169,5 +178,14 @@ public struct Vector
             }
         }
         return false;
+    }
+    public string str => ToString();
+    public string ToString()
+    {
+        string result = "";
+        foreach (var item in coords)
+            result += $"{item};";
+        result.Remove(result.Length - 1);
+        return result;
     }
 }

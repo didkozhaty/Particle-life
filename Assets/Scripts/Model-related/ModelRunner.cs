@@ -7,8 +7,8 @@ using UnityEngine;
 
 public class ModelRunner : MonoBehaviour
 {
-    Dictionary<string, float[][]> dataset;
-    Model model;
+    static Dictionary<string, float[][]> dataset;
+    public static Model model;
     // Start is called before the first frame update
     void Start()
     {
@@ -22,7 +22,7 @@ public class ModelRunner : MonoBehaviour
         };
         dataset = Datasets.titaticTrain;
         //Debug.Log(elapseTime());
-        model = new(dataset["x"][0].Length, dataset["y"][0].Length, 0, ModelType.coordChange);
+        model = new(dataset["x"][0].Length, dataset["y"][0].Length, 8, ModelType.outputCoords);
         Debug.Log($"{dataset["x"][0].Length}, {dataset["y"][0].Length}");
         //Debug.Log(elapseTime());
         Debug.Log(model.ModelGrade(dataset["x"], dataset["y"]));
@@ -30,7 +30,10 @@ public class ModelRunner : MonoBehaviour
     }
     public void train()
     {
-        model.train(dataset["x"], dataset["y"]);
+        for (int i = 0; i < 10; i++)
+        {
+            model.train(dataset["x"], dataset["y"]);
+        }
         Debug.Log(model.ModelGrade(dataset["x"], dataset["y"]));
         model.Visualize();
     }

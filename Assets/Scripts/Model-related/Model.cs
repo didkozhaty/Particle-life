@@ -67,10 +67,13 @@ public class Model
             all.AddRange(answer);
             all.AddRange(bias);
         }
+        string str = "";
         foreach (var particle in all)
         {
             allPos.Add(particle.pos.copy);
+            str += $"{allPos.Count-1}: {allPos[allPos.Count-1].str}\n";
         }
+        Debug.Log(str);
         input.gravityTo = all;
         this.inputs = inputs;
         this.outputs = outputs;
@@ -80,15 +83,7 @@ public class Model
     {
         for (int i = 0; i < inputs.Length; i++)
         {
-            try
-            {
-                input.pos.coords[i] = inputs[i];
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
+            input.pos.coords[i] = inputs[i];
         }
         for (int i = 0; i < 100; i++)
         {
@@ -99,7 +94,10 @@ public class Model
         {
             all[i].pos = allPos[i].copy;
             all[i].velocity.zero();
+            input.velocity.zero();
+            input.pos.zero();
         }
+
         return answers;
     }
     public float[][] predict(float[][] inputs)
@@ -137,31 +135,26 @@ public class Model
     }
     public void train(float[] inputs, float[] rightAnswers)
     {
-        List<Vector> velocities = new List<Vector>(all.Count);
-        List<Vector> coordChange = new List<Vector>(all.Count);
+        List<Vector> velocities = new List<Vector>();
+        List<Vector> coordChange = new List<Vector>();
         Vector avgPos = new Vector(input.pos.dims);
         for (int i = 0; i < this.inputs; i++)
         {
             input.pos.coords[i] = inputs[i];
         }
         List<Vector> iter = input.Step(true);
-        coordChange = iter;
-        velocities = iter;
+        iter.ForEach(i =>
+        {
+            coordChange.Add(i.copy);
+            velocities.Add(i.copy);
+        });
         for (int i = 1; i < 100; i++)
         {
             avgPos += input.pos;
             iter = input.Step(true);
             for (int j = 0; j < iter.Count; j++)
             {
-                try
-                {
-                    coordChange[j] += velocities[j];
-                }
-                catch (Exception)
-                {
-                    Debug.Log($"{j},{coordChange.Count},{velocities.Count},{iter.Count}");
-                    throw;
-                }
+                coordChange[j] += velocities[j];
                 velocities[j] += iter[j];
             }
         }
@@ -178,6 +171,8 @@ public class Model
         {
             all[i].pos = allPos[i].copy;
             all[i].velocity.zero();
+            input.velocity.zero();
+            input.pos.zero();
         }
     }
     public void train(float[][] inputs, float[][] rightAnswers)
@@ -239,7 +234,8 @@ public class Model
         {
             try
             {
-                retme += $"precision: {precision[i][0] / (precision[i].Sum())},";
+                float p = precision[i][0] / (precision[i].Sum());
+                retme += $"precision: {(float.IsNaN(p) ? 0 : p)},";
             }
             catch (DivideByZeroException)
             {
@@ -283,41 +279,41 @@ public class Model
         float velocityToAnswer;
         if (s.containsNaN)
             throw new System.Exception("NaN in s");
-        if (modelType == ModelType.velocity)
-        {
-            float mistake = givenAnswers[answerIndex] - rightAnswer;
-            correcting.weight += mistake * velocity[answerIndex];
-        }
-        else if (modelType == ModelType.distance)
-        {
-            Vector velPos = new Vector(correcting.pos.dims);
-            for(int i = 0; i < inputs.Length; i++)
-            {
-                velPos[i] = inputs[i];
-            }
-            velPos += s;
-            Vector mistake = velPos - all[answerIndex].pos;
-            float howMuch = 0;
-            for (int i = 0; i < mistake.dims; i++)
-                howMuch += mistake[i];
-            howMuch = howMuch > 0 ? 1 : -1;
-            correcting.weight += mistake.lenght * howMuch;
-        }
-        else if (modelType == ModelType.coordsOut)
-        {
-            float mistake = givenAnswers[answerIndex] - rightAnswer;
-            correcting.weight += mistake * velocity[answerIndex];
-        }
-        else if (modelType == ModelType.coordChange)
-        {
-            float mistake = givenAnswers[answerIndex] - rightAnswer;
-            correcting.weight += mistake * velocity[answerIndex];
-        }
-        else if (modelType == ModelType.outputCoords)
-        {
-            float mistake = givenAnswers[answerIndex] - rightAnswer;
-            correcting.weight += mistake * velocity[answerIndex + this.inputs];
-        }
+        //if (modelType == ModelType.velocity)
+        //{
+        //    float mistake = givenAnswers[answerIndex] - rightAnswer;
+        //    correcting.weight += mistake * velocity[answerIndex];
+        //}
+        //else if (modelType == ModelType.distance)
+        //{
+        //    Vector velPos = new Vector(correcting.pos.dims);
+        //    for(int i = 0; i < inputs.Length; i++)
+        //    {
+        //        velPos[i] = inputs[i];
+        //    }
+        //    velPos += s;
+        //    Vector mistake = velPos - all[answerIndex].pos;
+        //    float howMuch = 0;
+        //    for (int i = 0; i < mistake.dims; i++)
+        //        howMuch += mistake[i];
+        //    howMuch = howMuch > 0 ? 1 : -1;
+        //    correcting.weight += mistake.lenght * howMuch;
+        //}
+        //else if (modelType == ModelType.coordsOut)
+        //{
+        //    float mistake = rightAnswer - givenAnswers[answerIndex];
+        //    correcting.weight += mistake * velocity[answerIndex];
+        //}
+        //else if (modelType == ModelType.coordChange)
+        //{
+        //    float mistake = rightAnswer - givenAnswers[answerIndex];
+        //    correcting.weight += -mistake * velocity[answerIndex] * 0.001f;
+        //}
+        //else if (modelType == ModelType.outputCoords)
+        //{
+        //    float mistake = givenAnswers[answerIndex] - rightAnswer;
+        //    correcting.weight += mistake * velocity[answerIndex + this.inputs];
+        //}
 
 
         if (modelType == ModelType.velocity)
@@ -343,12 +339,12 @@ public class Model
         else if (modelType == ModelType.coordsOut)
         {
             float mistake = givenAnswers[answerIndex] - rightAnswer;
-            allPos[particleIndex] += s * mistake;
+            allPos[particleIndex].coords[answerIndex] += s[answerIndex] * mistake;
         }
         else if (modelType == ModelType.coordChange)
         {
-            float mistake = givenAnswers[answerIndex] - rightAnswer;
-            allPos[particleIndex] += s * mistake;
+            float mistake = rightAnswer - givenAnswers[answerIndex];
+            allPos[particleIndex] += s * mistake * 0.01f;
         }
         else if (modelType == ModelType.outputCoords)
         {
@@ -365,7 +361,7 @@ public class Model
                 answer.Add(input.velocity[i]);
         } else if (modelType == ModelType.distance) {
             for (int i = 0; i < outputs; i++)
-                answer.Add((this.answer[i].pos - input.pos).lenght);
+                answer.Add(1/(this.answer[i].pos - input.pos).lenght);
         } else if (modelType == ModelType.coordsOut)
         {
             for (int i = 0; i < outputs; i++)
@@ -374,10 +370,6 @@ public class Model
         {
             for (int i = 0; i < outputs; i++)
             {
-                if (inputData.Where(a => float.IsNaN(a)).Count() > 0)
-                    throw new Exception("NaN in input");
-                if(input.pos.containsNaN)
-                    throw new Exception("NaN in pos");
                 answer.Add(inputData[i] - input.pos[i]);
             }    
         } else if (modelType == ModelType.outputCoords)
@@ -385,11 +377,17 @@ public class Model
             for (int i = 0; i < outputs; i++)
                 answer.Add(input.pos[inputs + i]);
         }
-        answer.ForEach(i => { if (i > max) max = i; });
+        answer.ForEach(i => { if (Mathf.Abs(i) > max) max = Mathf.Abs(i); });
+        foreach (var i in answer)
+            if (float.IsNaN(i))
+                throw new Exception("NaN in answers");
         for (int i = 0; i < answer.Count; i++)
         {
             answer[i] /= max;
         }
+        //if (max == 0)
+        //    for (int i = 0; i < answer.Count; i++)
+        //        answer[i] = 0.5f;
         return answer.ToArray();
     }
     public void Visualize()
